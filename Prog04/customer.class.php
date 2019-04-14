@@ -1,32 +1,42 @@
 <?php
+
+/*
+Used Breanna Howey's Code As Reference
+*/
+
 if (!$_SESSION) {
-    header("Location: login.php");
+	session_destroy();
+	header("Location: login.php");
+	exit();
 }
 
-class Customer {
+class Customer { 
     public $id;
     public $name;
     public $email;
     public $mobile;
-    public $password; // text from HTML form
-    public $password_hashed; // hashed password
-    private $sessionid = null;
+	public $password;
+	public $password_hashed;
+	public $newPassword;
+	public $confirmNewPassword;
+	private $sessionid = null;
     private $noerrors = true;
     private $nameError = null;
     private $emailError = null;
     private $mobileError = null;
-    private $passwordError = null;
-    private $confirmCodeError = null;
-    private $confirmPasswordError = 'Changing password is optional';
+	private $passwordError = null;
+	private $confirmCodeError = null;
+	private $confirmPasswordError = 'Changing password is optional';
     private $title = "Customer";
     private $tableName = "customers";
     
+	
     function create_record() { // display "create" form
         $this->generate_html_top (1);
-        $this->generate_form_group("Name", $this->nameError, $this->name, "autofocus");
-        $this->generate_form_group("Email", $this->emailError, $this->email);
-        $this->generate_form_group("Mobile", $this->mobileError, $this->mobile);
-		$this->generate_form_group("Password", $this->passwordError, $this->password, "", "password");
+        $this->generate_form_group("name", $this->nameError, $this->name, "autofocus");
+        $this->generate_form_group("email", $this->emailError, $this->email);
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile);
+		$this->generate_form_group("password", $this->passwordError, $this->password, "", "password");
 		$this->display_file_upload();
         $this->generate_html_bottom (1);
     } // end function create_record()
@@ -35,19 +45,21 @@ class Customer {
         $this->select_db_record($id);
         $this->generate_html_top(2);
 		$this->display_photo();
-        $this->generate_form_group("Name", $this->nameError, $this->name, "disabled");
-        $this->generate_form_group("Email", $this->emailError, $this->email, "disabled");
-        $this->generate_form_group("Mobile", $this->mobileError, $this->mobile, "disabled");
+        $this->generate_form_group("name", $this->nameError, $this->name, "disabled");
+        $this->generate_form_group("email", $this->emailError, $this->email, "disabled");
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile, "disabled");
         $this->generate_html_bottom(2);
     } // end function read_record()
     
     function update_record($id) { // display "update" form
         if($this->noerrors) $this->select_db_record($id);
         $this->generate_html_top(3, $id);
-        $this->generate_form_group("Name", $this->nameError, $this->name, "autofocus onfocus='this.select()'");
-        $this->generate_form_group("Email", $this->emailError, $this->email);
-        $this->generate_form_group("Mobile", $this->mobileError, $this->mobile);
-		$this->generate_form_group("Password", $this->passwordError, $this->password, "", "password");
+        $this->generate_form_group("name", $this->nameError, $this->name, "autofocus onfocus='this.select()'");
+        $this->generate_form_group("email", $this->emailError, $this->email);
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile);
+		$this->generate_form_group("password", $this->passwordError, $this->password, "", "password");
+		$this->generate_form_group("NewPassword", null, $this->newPassword, "", "password");
+		$this->generate_form_group("ConfirmNewPassword", $this->confirmPasswordError, $this->confirmNewPassword, "", "password");
 		$this->display_file_upload();
         $this->generate_html_bottom(3);
     } // end function update_record()
@@ -55,11 +67,18 @@ class Customer {
     function delete_record($id) { // display "read" form
         $this->select_db_record($id);
         $this->generate_html_top(4, $id);
-        $this->generate_form_group("Name", $this->nameError, $this->name, "disabled");
-        $this->generate_form_group("Email", $this->emailError, $this->email, "disabled");
-        $this->generate_form_group("Mobile", $this->mobileError, $this->mobile, "disabled");
+        $this->generate_form_group("name", $this->nameError, $this->name, "disabled");
+        $this->generate_form_group("email", $this->emailError, $this->email, "disabled");
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile, "disabled");
         $this->generate_html_bottom(4);
     } // end function delete_record()
+	
+	function confirm_page() {
+		$this->generate_html_top(5);
+		$this->generate_form_group("code", $this->confirmCodeError, "", "autofocus");
+		$this->generate_form_group("password", $this->passwordError, $this->password, "", "password");
+		$this->generate_html_bottom(5);
+	}
     
     function insert_db_record () {
 		if (isset($_SESSION['name'])) $this->name = $_SESSION['name'];
@@ -80,8 +99,10 @@ class Customer {
 			$filePath = substr($this->get_current_url(), 0, 44);
 			$filePath = "https://cis255gemalisk.000webhostapp.com/cs355Prog04/uploads/" . $fileName;
 		}
-			if ($this->fieldsAllValid ()) { // validate user input
-				$this->save_file_to_directory();
+		
+        if ($this->fieldsAllValid ()) { 
+			$this->save_file_to_directory();
+			if ($this->check_email()) { 
 				$pdo = Database::connect();
 				$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 				$this->password_hashed = MD5($this->password);
@@ -90,15 +111,18 @@ class Customer {
 				$q->execute(array($this->name,$this->email,$this->mobile,$this->password_hashed,$fileName,$fileSize,$fileType,$content,$filePath,$fileDescription));
 				Database::disconnect();
 				if (isset($_SESSION["user_id"])){
-					header("Location: $this->tableName.php?fun=display_list"); // return to "list"
+					header("Location: $this->tableName.php?fun=display_list"); // go back to "list"
 				}
-				else {
-					header("Location: login.php"); //go to login
-				}
+				else header("Location: login.php"); //go to login
 			}
 			else {
-				$this->create_record(); 
-			}
+				$this->emailError = 'This email has already been registered!';
+				$this->create_record();
+            }
+        }
+        else {
+            $this->create_record(); 
+        }
     } // end function insert_db_record
     
     private function select_db_record($id) {
@@ -115,17 +139,19 @@ class Customer {
     } // function select_db_record()
     
     function update_db_record ($id) {
-		$this->id = $id;
+        $this->id = $id;
 		if(isset($_POST["name"]))       $this->name = htmlspecialchars($_POST["name"]);
 		if(isset($_POST["email"]))  	$this->email = htmlspecialchars($_POST["email"]);
 		if(isset($_POST["mobile"]))     $this->mobile = htmlspecialchars($_POST["mobile"]);
-			
+		$this->newPassword = htmlspecialchars($_POST["NewPassword"]);
+		$this->confirmNewPassword = htmlspecialchars($_POST["ConfirmNewPassword"]);
+		
 		$fileDescription = $_POST['Description']; 
 		$fileName       = $_FILES['Filename']['name'];
 		$tempFileName   = $_FILES['Filename']['tmp_name'];
 		$fileSize       = $_FILES['Filename']['size'];
 		$fileType       = $_FILES['Filename']['type'];
-			
+		
 		if($fileSize > 2000000) { echo "Error: file exceeds 2MB."; exit(); }
 		
 		$content = file_get_contents($tempFileName);
@@ -133,31 +159,37 @@ class Customer {
 			$filePath = substr($this->get_current_url(), 0, 44);
 			$filePath = "https://cis255gemalisk.000webhostapp.com/cs355Prog04/uploads/" . $fileName;
 		}
-			if ($this->fieldsAllValid ()) {
-				$this->noerrors = true;
-				if ($this->check_password()) {
-					$pdo = Database::connect();
-					$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-					$sql = "UPDATE $this->tableName  set name = ?, email = ?, mobile = ? WHERE id = ?";
+		
+        if ($this->fieldsAllValid ()) {
+            $this->noerrors = true;
+			if ($this->check_password()) {
+				
+				$pdo = Database::connect();
+				$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+				$sql = "UPDATE $this->tableName  set name = ?, email = ?, mobile = ? WHERE id = ?";
+				$q = $pdo->prepare($sql);
+				$q->execute(array($this->name,$this->email,$this->mobile,$this->id));
+				
+				if($fileName != "") {
+					$this->save_file_to_directory();
+					$sql = "UPDATE $this->tableName  set filename = ?,filesize = ?,filetype = ?,filecontent = ?,filepath = ?,description = ? WHERE id = ?";
 					$q = $pdo->prepare($sql);
-					$q->execute(array($this->name,$this->email,$this->mobile,$this->id));
-					
-					if($fileName != "") {
-						$this->save_file_to_directory();
-						$sql = "UPDATE $this->tableName  set filename = ?,filesize = ?,filetype = ?,filecontent = ?,filepath = ?,description = ? WHERE id = ?";
-						$q = $pdo->prepare($sql);
-						$q->execute(array($fileName,$fileSize,$fileType,$content,$filePath,$fileDescription,$this->id));
-					}
-					
-				Database::disconnect();
-				header("Location: $this->tableName.php?fun=display_list");
+					$q->execute(array($fileName,$fileSize,$fileType,$content,$filePath,$fileDescription,$this->id));
 				}
+				
+				Database::disconnect();
+				$this->newPassword = null;
+				$this->confirmNewPassword = null;
+				header("Location: $this->tableName.php?fun=display_list");
 			}
-			else {
-				$this->noerrors = false;
-				$this->update_record($id);  // go back to "update" form
-			}
-	}//end function update db record
+        }
+        else {
+			$this->newPassword = null;
+			$this->confirmNewPassword = null;
+            $this->noerrors = false;
+            $this->update_record($id);
+        }
+    } // end function update_db_record 
     
     function delete_db_record($id) {
         $pdo = Database::connect();
@@ -199,24 +231,22 @@ class Customer {
 		$tempFileName   = $_FILES['Filename']['tmp_name'];
 		$fileSize       = $_FILES['Filename']['size'];
 		$fileType       = $_FILES['Filename']['type'];
+
 		$fileLocation = 'uploads/';
 		$fileFullPath = $fileLocation . $fileName; 
-		if (!file_exists($fileLocation)) {
+		if (!file_exists($fileLocation))
 			mkdir ($fileLocation); // create subdirectory, if necessary
-		}
 		
-		// if file does not already exist, upload it
 		if (!file_exists($fileFullPath)) {
 			$result = move_uploaded_file($tempFileName, $fileFullPath);
 			if ($result) {
-				echo "Upload successful. " . $fileName;
-			} 
-			else {
+				
+			} else {
 				echo "Upload denied for file. " . $fileName 
 					. "</i></b>. Verify file size < 2MB. ";
 			}
 		}
-		else { // file already exists error message
+		else {
 			echo "File <b><i>" . $fileName 
 				. "</i></b> already exists. Please rename file.";
 		}
@@ -251,7 +281,7 @@ class Customer {
 				<input type='file' name='Filename'> 
 				<p>Description</p>
 				<textarea rows='10' cols='35' name='Description'></textarea>
-				<p>*Max of 255 characters.</p>
+				<p>*Min of 255 characters</p>
 				<br/>";
 	}
    
@@ -271,16 +301,31 @@ class Customer {
 			$this->passwordError = 'Incorrect password, unable to change user information';
 			$this->update_record($this->id);
 		}
+		if ($this->newPassword == $this->confirmNewPassword) {
+			if ($this->newPassword != "" && $this->confirmNewPassword != ""){
+				$this->password = $this->newPassword;
+				$this->password_hashed = MD5($this->password);
+				$sql = "UPDATE $this->tableName set password_hash = ? WHERE id = ?";
+				$q = $pdo->prepare($sql);
+				$q->execute(array($this->password_hashed,$this->id));
+			}
+		}
+		else {
+			Database::disconnect();
+			$valid = false;
+			$this->confirmPasswordError = 'New passwords do not match';
+			$this->update_record($this->id);
+		}
 		
 		Database::disconnect();
-		return;
+		return $valid;
 	}
 	
 	
     private function generate_html_top ($fun, $id=null) {
         switch ($fun) {
             case 1: // create
-                $funWord = "Create"; $funNext = "insert_db_record"; 
+                $funWord = "Create"; $funNext = "insert_db_record";
                 break;
             case 2: // read
                 $funWord = "Read"; $funNext = "none"; 
@@ -299,7 +344,7 @@ class Customer {
         echo "<!DOCTYPE html>
         <html>
             <head>
-                <title>$funWord a $this->title</title>
+                <title>$funWord</title>
                     ";
         echo "
                 <meta charset='UTF-8'>
@@ -311,10 +356,10 @@ class Customer {
             </head>";
         echo "
             <body>
-                <div class='container'>
+	                <div class='container'>
                     <div class='span10 offset1'>
                         <p class='row'>
-                            <h3>$funWord a $this->title</h3>
+                            <h3>$funWord</h3>
                         </p>
                         <form class='form-horizontal' action='$this->tableName.php?fun=$funNext' method='post' enctype='multipart/form-data'>                        
                     ";
@@ -322,6 +367,9 @@ class Customer {
     
     private function generate_html_bottom ($fun) {
         switch ($fun) {
+			case 0: // login
+				$funButton = "<button type='submit' class='btn btn-secondary'>Login</button>";
+				break;
             case 1: // create
                 $funButton = "<button type='submit' class='btn btn-success'>Create</button>"; 
                 break;
@@ -334,6 +382,9 @@ class Customer {
             case 4: // delete
                 $funButton = "<button type='submit' class='btn btn-danger'>Delete</button>"; 
                 break;
+			case 5: // confirm
+				$funButton = "<button type='submit' class='btn btn-info'>Confirm</button>";
+				break;
             default: 
                 echo "Error: Invalid function: generate_html_bottom()"; 
                 exit();
@@ -341,8 +392,19 @@ class Customer {
         }
         echo " 
                             <div class='form-actions'>
-                                $funButton
-                                <a class='btn btn-secondary' href='$this->tableName.php?fun=display_list'>Back</a>
+                                $funButton ";
+		if ($fun == 0) {
+			echo 				"<a class='btn btn-success' href='$this->tableName.php?fun=display_create_form'>Join</a>";
+		}
+		else if ($fun == 5) {
+			echo "
+                                <a class='btn btn-secondary' href='login.php'>Back to Login</a>";
+		}
+		else {
+			echo "
+                                <a class='btn btn-secondary' href='$this->tableName.php?fun=display_list'>Back</a>";
+		}
+		echo "
                             </div>
                         </form>
                     </div>
@@ -352,7 +414,7 @@ class Customer {
                     ";
     } // end function generate_html_bottom()
     
-	 private function generate_form_group ($label, $labelError, $val, $modifier="", $fieldType="text") {
+    private function generate_form_group ($label, $labelError, $val, $modifier="", $fieldType="text") {
         echo "<div class='form-group";
         echo !empty($labelError) ? ' alert alert-danger ' : '';
         echo "'>";
@@ -373,6 +435,7 @@ class Customer {
         echo "</div>";
     } // end function generate_form_group()
     
+	
     private function fieldsAllValid () {
         $valid = true;
         if (empty($this->name)) {
@@ -395,7 +458,7 @@ class Customer {
 			$this->passwordError = 'Please enter a password';
 			$valid = false;
 		}
-		return $valid;
+        return $valid;
     } // end function fieldsAllValid() 
 	
 	function list_pics() {
@@ -473,9 +536,9 @@ class Customer {
                     ";  
         echo "
             </head>
-            <body>
 		<a href='https://github.com/gemalisk/CIS355Prog4' target='_blank'>Github Link</a><br />
 		<a href='https://github.com' target='_blank'>UML Diagram</a><br />
+            <body>
                 <div class='container'>
                     <p class='row'>
                         <h3>$this->title" . "s" . "</h3>
