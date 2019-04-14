@@ -537,7 +537,7 @@ class Customer {
         echo "
             </head>
 		<a href='https://github.com/gemalisk/CIS355Prog4' target='_blank'>Github Link</a><br />
-		<a href='https://github.com' target='_blank'>UML Diagram</a><br />
+		<a href='https://github.com/gemalisk/CIS355Prog4/blob/master/Prog04/Prog4.png'>UML Diagram</a><br />
             <body>
                 <div class='container'>
                     <p class='row'>
