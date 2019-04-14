@@ -474,10 +474,8 @@ class Customer {
         echo "
             </head>
             <body>
-		<a href='https://github.com/brhowey/cis355-Prog04' target='_blank'>Github Link</a><br />
-		<a href='https://raw.githubusercontent.com/brhowey/cis355-Prog03/master/uml%201.png' target='_blank'>Prog 03 Diagram #1</a><br />
-		<a href='https://raw.githubusercontent.com/brhowey/cis355-Prog03/master/uml%202.png' target='_blank'>Prog 03 Diagram #2</a><br />
-		<a href='https://raw.githubusercontent.com/brhowey/cis355-Prog04/master/prog%2004.PNG' target='_blank'>Prog 04 UML</a><br />
+		<a href='https://github.com/gemalisk/CIS355Prog4' target='_blank'>Github Link</a><br />
+		<a href='https://github.com' target='_blank'>UML Diagram</a><br />
                 <div class='container'>
                     <p class='row'>
                         <h3>$this->title" . "s" . "</h3>
