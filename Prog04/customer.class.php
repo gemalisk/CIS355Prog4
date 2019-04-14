@@ -79,7 +79,6 @@ class Customer {
 		if ($fileName != "") {
 			$filePath = substr($this->get_current_url(), 0, 44);
 			$filePath = "https://cis255gemalisk.000webhostapp.com/cs355Prog04/uploads/" . $fileName;
-		//	$filePath = "breannahowey-cis255-2018.000webhostapp.com/cis355-Prog04/uploads/";
 		}
 			if ($this->fieldsAllValid ()) { // validate user input
 				$this->save_file_to_directory();
@@ -474,11 +473,11 @@ class Customer {
                     ";  
         echo "
             </head>
-            <a href='https://github.com/brhowey/cis355-Prog04' target='_blank'>Github</a><br />
-            <a href='https://raw.githubusercontent.com/brhowey/cis355-Prog03/master/uml%201.png' target='_blank'>Prog 03 Diagram #1</a><br />
-            <a href='https://raw.githubusercontent.com/brhowey/cis355-Prog03/master/uml%202.png' target='_blank'>Prog 03 Diagram #2</a><br />
-            <a href='https://raw.githubusercontent.com/brhowey/cis355-Prog04/master/prog%2004.PNG' target='_blank'>Prog 04 UML</a><br />
             <body>
+		<a href='https://github.com/brhowey/cis355-Prog04' target='_blank'>Github Link</a><br />
+		<a href='https://raw.githubusercontent.com/brhowey/cis355-Prog03/master/uml%201.png' target='_blank'>Prog 03 Diagram #1</a><br />
+		<a href='https://raw.githubusercontent.com/brhowey/cis355-Prog03/master/uml%202.png' target='_blank'>Prog 03 Diagram #2</a><br />
+		<a href='https://raw.githubusercontent.com/brhowey/cis355-Prog04/master/prog%2004.PNG' target='_blank'>Prog 04 UML</a><br />
                 <div class='container'>
                     <p class='row'>
                         <h3>$this->title" . "s" . "</h3>
